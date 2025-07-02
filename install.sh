@@ -41,13 +41,20 @@ chmod +x wai.sh
 
 # 4. Jalankan sekali untuk download model dan generate token
 echo ""
-echo "🚀 Jalankan ./wai.sh sekali untuk download model & token..."
-./wai.sh
+echo "🚀 Jalankan proses download model & generate token"
 
 echo ""
-echo "✅ Setelah token muncul dan model selesai terdownload,"
-echo "➡️  Tekan CTRL + C untuk lanjut setup worker."
-read -p "Tekan ENTER setelah kamu tekan CTRL + C..."
+echo "✅ W.AI CLI akan dijalankan satu kali sekarang."
+echo "⏳ Tunggu hingga proses selesai (akan muncul token di output)."
+echo "🛑 Setelah itu, TEKAN CTRL + C untuk menghentikan dan lanjut ke tahap berikutnya."
+echo ""
+read -p "▶️ Tekan ENTER untuk menjalankan './wai.sh'..."
+
+bash ./wai.sh
+
+echo ""
+echo "✅ Setelah kamu menekan CTRL + C dan proses berhenti,"
+read -p "➡️ Tekan ENTER untuk lanjut ke setup worker..."
 
 # 5. Jalankan semua worker sesuai jumlah input
 echo ""
