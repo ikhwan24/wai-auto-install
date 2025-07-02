@@ -14,7 +14,7 @@
   <li>✅ Install W.AI CLI otomatis (<code>curl -fsSL ...</code>)</li>
   <li>✅ Input API Key dari pengguna</li>
   <li>✅ Input jumlah worker fleksibel (misal: 5, 10, dll)</li>
-  <li>✅ Jalankan <code>wai.sh</code> sekali untuk download model & generate token</li>
+  <li>✅ Jalankan <code>install.sh</code> sekali untuk download model & generate token</li>
   <li>✅ Start semua worker pakai PM2</li>
   <li>✅ Rolling restart otomatis setiap 10 menit</li>
   <li>✅ PM2 save dan setup agar bertahan setelah reboot (di luar Vast.ai)</li>
@@ -27,14 +27,13 @@
   <li>Sudah memiliki API key dari <a href="https://app.w.ai" target="_blank">https://app.w.ai</a></li>
 </ul>
 
-<h2>🔧 Cara Pakai</h2>
-<h3>1. Download dan Jalankan</h3>
-<pre><code>wget https://yourdomain.com/install-wai.sh
-chmod +x install-wai.sh
-./install-wai.sh</code></pre>
+<h2>🔧 Cara Instalasi</h2>
 
-<p><strong>Atau langsung via CURL:</strong></p>
-<pre><code>curl -fsSL https://yourdomain.com/install-wai.sh | bash</code></pre>
+<h3>1. Clone dari GitHub</h3>
+<pre><code>git clone https://github.com/ikhwan24/wai-auto-install.git
+cd wai-auto-install
+chmod +x install.sh
+./install.sh</code></pre>
 
 <h3>2. Ikuti Instruksi</h3>
 <ul>
@@ -63,16 +62,20 @@ chmod +x install-wai.sh
       <td>Simpan API key (<code>W_AI_API_KEY</code>)</td>
     </tr>
     <tr>
+      <td><code>install.sh</code></td>
+      <td>Script utama untuk setup W.AI + worker + rolling restart</td>
+    </tr>
+    <tr>
       <td><code>wai.sh</code></td>
       <td>Script untuk menjalankan <code>wai run w.ai</code></td>
     </tr>
     <tr>
       <td><code>rolling-restart.sh</code></td>
-      <td>Restart worker satu per satu tiap 10 menit</td>
+      <td>Loop restart worker satu per satu tiap 10 menit</td>
     </tr>
     <tr>
       <td>PM2 Process</td>
-      <td>Worker: <code>wai0</code>, <code>wai1</code>, ... <code>waiN</code><br>Roller: <code>pm2-roller</code></td>
+      <td>Worker: <code>wai0</code> s/d <code>waiN</code><br>Roller: <code>pm2-roller</code></td>
     </tr>
   </tbody>
 </table>
@@ -90,7 +93,7 @@ sleep 600
 pm2 startup</code></pre>
 <p>⚠️ Di <strong>Vast.ai</strong>, proses startup tidak otomatis persist. Gunakan VPS biasa jika ingin ini aktif.</p>
 
-<p>Untuk menghidupkan ulang:</p>
+<p>Untuk menghidupkan ulang secara manual:</p>
 <pre><code>pm2 resurrect</code></pre>
 
 <h2>💡 Tips Tambahan</h2>
