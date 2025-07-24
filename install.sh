@@ -1,5 +1,67 @@
 #!/bin/bash
 
+if [[ "$1" == "uninstall" ]]; then
+  echo "🧹 Melakukan clean uninstall w.ai..."
+
+  # Stop dan hapus semua proses PM2 terkait w.ai
+  pm2 stop all
+  pm2 delete all
+
+  # Hapus file konfigurasi dan script
+  rm -f .env wai.sh rolling-restart.sh
+
+  # Hapus folder .wombo jika ada
+  rm -rf .wombo
+
+  echo "✅ Uninstall selesai. Semua file dan proses w.ai sudah dihapus."
+  exit 0
+fi
+
+if [[ "$1" == "reinit" ]]; then
+  echo "🔄 Re-inisialisasi worker w.ai..."
+
+  # Stop & delete semua proses PM2 (termasuk roller-restart)
+  pm2 stop all
+  pm2 delete all
+
+  # Hapus rolling-restart.sh agar bisa dibuat ulang jika perlu
+  rm -f rolling-restart.sh
+
+  # Minta input jumlah worker baru
+  echo ""
+  echo "👷 Masukkan jumlah worker baru yang ingin dijalankan:"
+  read -p "Jumlah Worker (misal 10): " WORKER_COUNT
+
+  # Jalankan worker baru
+  for ((i=0; i<WORKER_COUNT; i++)); do
+    pm2 start ./wai.sh --name "wai$i"
+  done
+
+  # Buat ulang script rolling-restart.sh
+  cat <<EOF > rolling-restart.sh
+#!/bin/bash
+
+while true; do
+  for i in \$(seq 0 \$((WORKER_COUNT-1))); do
+    echo "[INFO] Restarting PM2 process wai\$i"
+    pm2 restart wai\$i
+    sleep 600
+  done
+done
+EOF
+  chmod +x rolling-restart.sh
+
+  # Jalankan rolling restart dengan PM2
+  pm2 start rolling-restart.sh --interpreter bash --name pm2-roller
+
+  # Simpan konfigurasi PM2
+  pm2 save
+
+  echo ""
+  echo "✅ Worker berhasil di-reinisialisasi menjadi $WORKER_COUNT worker dan rolling restart aktif."
+  exit 0
+fi
+
 # ----------------------------------------
 # 🚀 Auto Setup w.ai di Vast.ai
 # By: https://x.com/IamBitcoiner
