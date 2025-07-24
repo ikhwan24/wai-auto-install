@@ -57,6 +57,17 @@ if [[ "$1" == "reinit" ]]; then
   echo "👷 Masukkan jumlah worker baru yang ingin dijalankan:"
   read -p "Jumlah Worker (misal 10): " WORKER_COUNT
 
+  # Buat ulang script wai.sh
+  cat <<'EOF' > wai.sh
+#!/bin/bash
+set -a
+source .env
+set +a
+
+wai run w.ai
+EOF
+  chmod +x wai.sh
+
   # Jalankan worker baru
   for ((i=0; i<WORKER_COUNT; i++)); do
     pm2 start ./wai.sh --name "wai$i"
