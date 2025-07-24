@@ -81,6 +81,9 @@ EOF
     pm2 start ./wai.sh --name "wai$i"
   done
 
+  # Stop semua worker agar tidak running serentak
+  pm2 stop all
+
   # Buat ulang script rolling-restart.sh
   cat <<EOF > rolling-restart.sh
 #!/bin/bash
