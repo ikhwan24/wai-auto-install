@@ -108,5 +108,40 @@ pm2 startup</code></pre>
   <li><a href="https://x.com/IamBitcoiner" target="_blank">https://x.com/IamBitcoiner</a></li>
 </ul>
 
+<h2>🆕 Fitur Baru</h2>
+<ul>
+  <li><strong>Menu Interaktif:</strong> Saat menjalankan <code>./install.sh</code> tanpa argumen, akan muncul menu pilihan:
+    <ul>
+      <li>1) Instalasi</li>
+      <li>2) Clean Uninstall</li>
+      <li>3) Reinit Worker</li>
+    </ul>
+  </li>
+  <li><strong>Clean Uninstall:</strong> Menghapus semua proses PM2, file konfigurasi (<code>.env</code>, <code>wai.sh</code>, <code>rolling-restart.sh</code>), dan folder <code>.wombo</code> (di parent directory).<br>
+    <em>Cara pakai:</em> <code>./install.sh uninstall</code> <br>atau pilih opsi 2 di menu.</li>
+  <li><strong>Reinit Worker:</strong> Menghapus semua worker & rolling restart, lalu membuat ulang sesuai jumlah baru yang diinput user. File <code>wai.sh</code>, <code>rolling-restart.sh</code>, dan <code>.env</code> (jika belum ada) akan dibuat ulang.<br>
+    <em>Cara pakai:</em> <code>./install.sh reinit</code> <br>atau pilih opsi 3 di menu.</li>
+</ul>
+
+<h2>📝 Panduan Menu Interaktif</h2>
+<ol>
+  <li>Jalankan <code>./install.sh</code> (atau <code>bash install.sh</code>).</li>
+  <li>Pilih salah satu opsi:
+    <ul>
+      <li><strong>1) Instalasi</strong>: Proses setup seperti biasa.</li>
+      <li><strong>2) Clean Uninstall</strong>: Menghapus semua worker, rolling restart, file konfigurasi, dan folder <code>.wombo</code> di parent directory.</li>
+      <li><strong>3) Reinit Worker</strong>: Menghapus semua worker & rolling restart, lalu membuat ulang worker sesuai jumlah baru yang diinput user. Jika <code>.env</code> tidak ada, akan diminta input API key lagi.</li>
+    </ul>
+  </li>
+</ol>
+
+<h2>❓ FAQ Ringkas</h2>
+<ul>
+  <li><strong>Setelah uninstall, apakah file <code>.env</code>, <code>wai.sh</code>, dan <code>rolling-restart.sh</code> dihapus?</strong><br>Ya, semua file tersebut dihapus, termasuk folder <code>.wombo</code> di parent directory.</li>
+  <li><strong>Setelah reinit, apakah file <code>.env</code>, <code>wai.sh</code>, dan <code>rolling-restart.sh</code> dibuat ulang?</strong><br>Ya, semuanya dibuat ulang secara otomatis. Jika <code>.env</code> belum ada, akan diminta input API key.</li>
+  <li><strong>Folder <code>.wombo</code> dihapus dari mana?</strong><br>Dari satu level di atas folder installer (<code>../.wombo</code>).</li>
+  <li><strong>Bagaimana jika ingin ganti jumlah worker?</strong><br>Gunakan menu <strong>Reinit Worker</strong> atau jalankan <code>./install.sh reinit</code>.</li>
+</ul>
+
 </body>
 </html>
