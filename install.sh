@@ -76,8 +76,8 @@ cat <<EOF > rolling-restart.sh
 
 while true; do
   for i in \$(seq 0 $((WORKER_COUNT-1))); do
-    echo "[INFO] Restarting PM2 process \$i"
-    pm2 restart \$i
+    echo "[INFO] Restarting PM2 process wai\$i"
+    pm2 restart wai\$i
     sleep 600
   done
 done
