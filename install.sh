@@ -35,8 +35,8 @@ if [[ "$1" == "uninstall" ]]; then
   # Hapus file konfigurasi dan script
   rm -f .env wai.sh rolling-restart.sh
 
-  # Hapus folder .wombo jika ada
-  rm -rf .wombo
+  # Hapus folder .wombo di parent directory jika ada
+  rm -rf ../.wombo
 
   echo "✅ Uninstall selesai. Semua file dan proses w.ai sudah dihapus."
   exit 0
@@ -56,6 +56,14 @@ if [[ "$1" == "reinit" ]]; then
   echo ""
   echo "👷 Masukkan jumlah worker baru yang ingin dijalankan:"
   read -p "Jumlah Worker (misal 10): " WORKER_COUNT
+
+  # Cek dan buat .env jika belum ada
+  if [[ ! -f .env ]]; then
+    echo ""
+    echo "🔑 Masukkan API key w.ai kamu:"
+    read -p "API_KEY: " API_KEY
+    echo "W_AI_API_KEY=$API_KEY" > .env
+  fi
 
   # Buat ulang script wai.sh
   cat <<'EOF' > wai.sh
