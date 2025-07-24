@@ -1,5 +1,30 @@
 #!/bin/bash
 
+if [[ -z "$1" ]]; then
+  echo "Pilih opsi:"
+  echo "1) Instalasi"
+  echo "2) Clean Uninstall"
+  echo "3) Reinit Worker"
+  read -p "Masukkan pilihan [1-3]: " MENU_CHOICE
+
+  case $MENU_CHOICE in
+    1)
+      echo "Melanjutkan ke proses instalasi..."
+      # lanjut ke script instalasi (tidak exit)
+      ;;
+    2)
+      exec bash "$0" uninstall
+      ;;
+    3)
+      exec bash "$0" reinit
+      ;;
+    *)
+      echo "Pilihan tidak valid."
+      exit 1
+      ;;
+  esac
+fi
+
 if [[ "$1" == "uninstall" ]]; then
   echo "🧹 Melakukan clean uninstall w.ai..."
 
