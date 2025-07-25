@@ -1,71 +1,6 @@
 #!/bin/bash
 
-if [[ -z "$1" ]]; then
-  echo "Pilih opsi:"
-  echo "1) Instalasi"
-  echo "2) Clean Uninstall"
-  echo "3) Reinit Worker"
-  read -p "Masukkan pilihan [1-3]: " MENU_CHOICE
-
-  case $MENU_CHOICE in
-    1)
-      echo "Melanjutkan ke proses instalasi..."
-      # lanjut ke script instalasi (tidak exit)
-      ;;
-    2)
-      exec bash "$0" uninstall
-      ;;
-    3)
-      exec bash "$0" reinit
-      ;;
-    *)
-      echo "Pilihan tidak valid."
-      exit 1
-      ;;
-  esac
-fi
-
-if [[ "$1" == "uninstall" ]]; then
-  echo "🧹 Melakukan clean uninstall w.ai..."
-
-  # Stop dan hapus semua proses PM2 terkait w.ai
-  pm2 stop all
-  pm2 delete all
-
-  # Hapus file konfigurasi dan script
-  rm -f .env wai.sh rolling-restart.sh
-
-  # Hapus folder .wombo di parent directory jika ada
-  rm -rf ../.wombo
-
-  echo "✅ Uninstall selesai. Semua file dan proses w.ai sudah dihapus."
-  exit 0
-fi
-
-if [[ "$1" == "reinit" ]]; then
-  echo "🔄 Re-inisialisasi worker w.ai..."
-
-  # Stop & delete semua proses PM2 (termasuk roller-restart)
-  pm2 stop all
-  pm2 delete all
-
-  # Hapus rolling-restart.sh agar bisa dibuat ulang jika perlu
-  rm -f rolling-restart.sh
-
-  # Minta input jumlah worker baru
-  echo ""
-  echo "👷 Masukkan jumlah worker baru yang ingin dijalankan:"
-  read -p "Jumlah Worker (misal 10): " WORKER_COUNT
-
-  # Cek dan buat .env jika belum ada
-  if [[ ! -f .env ]]; then
-    echo ""
-    echo "🔑 Masukkan API key w.ai kamu:"
-    read -p "API_KEY: " API_KEY
-    echo "W_AI_API_KEY=$API_KEY" > .env
-  fi
-
-  # Buat ulang script wai.sh
+generate_wai_script() {
   cat <<'EOF' > wai.sh
 #!/bin/bash
 set -a
@@ -75,28 +10,18 @@ set +a
 wai run w.ai
 EOF
   chmod +x wai.sh
+}
 
-  # Jalankan worker baru
-  for ((i=0; i<WORKER_COUNT; i++)); do
-    pm2 start ./wai.sh --name "wai$i"
-  done
+generate_rolling_restart_script() {
+  local COUNT=$1
+  local LAST_INDEX=$((COUNT - 1))
 
-  # Stop semua worker agar tidak running serentak
-  pm2 stop all
-
-  # Buat ulang script rolling-restart.sh
- # 7. Buat script rolling-restart.sh
-echo ""
-echo "🔁 Membuat script rolling restart..."
-
-WORKER_LAST_INDEX=$((WORKER_COUNT - 1))
-
-cat > rolling-restart.sh <<EOF
+  cat > rolling-restart.sh <<EOF
 #!/bin/bash
 
 # Rolling restart loop untuk semua worker
 while true; do
-  for i in \$(seq 0 $WORKER_LAST_INDEX); do
+  for i in \$(seq 0 $LAST_INDEX); do
     echo "[INFO] Restarting PM2 process wai\$i"
     pm2 restart wai\$i
     sleep 600
@@ -104,115 +29,124 @@ while true; do
 done
 EOF
 
-chmod +x rolling-restart.sh
+  chmod +x rolling-restart.sh
+}
 
-  # Jalankan rolling restart dengan PM2
+install_dependencies() {
+  echo "📦 Menginstall Node.js dan PM2..."
+  sudo apt update
+  sudo apt install nodejs npm -y
+  npm install -g pm2
+}
+
+setup_workers() {
+  local COUNT=$1
+  for ((i=0; i<COUNT; i++)); do
+    pm2 start ./wai.sh --name "wai$i"
+  done
+  pm2 stop all
+}
+
+save_pm2_config() {
   pm2 start rolling-restart.sh --interpreter bash --name pm2-roller
-
-  # Simpan konfigurasi PM2
   pm2 save
+  pm2 startup
+}
 
-  echo ""
-  echo "✅ Worker berhasil di-reinisialisasi menjadi $WORKER_COUNT worker dan rolling restart aktif."
+# =================== MENU ===================
+
+if [[ -z "$1" ]]; then
+  echo "Pilih opsi:"
+  echo "1) Instalasi"
+  echo "2) Clean Uninstall"
+  echo "3) Reinit Worker"
+  read -p "Masukkan pilihan [1-3]: " MENU_CHOICE
+
+  case $MENU_CHOICE in
+    1) ;;
+    2) exec bash "$0" uninstall ;;
+    3) exec bash "$0" reinit ;;
+    *) echo "Pilihan tidak valid."; exit 1 ;;
+  esac
+fi
+
+# =================== UNINSTALL ===================
+
+if [[ "$1" == "uninstall" ]]; then
+  echo "🧹 Melakukan clean uninstall w.ai..."
+  pm2 stop all
+  pm2 delete all
+  rm -f .env wai.sh rolling-restart.sh
+  rm -rf ../.wombo
+  echo "✅ Uninstall selesai. Semua file dan proses w.ai sudah dihapus."
   exit 0
 fi
 
-# ----------------------------------------
-# 🚀 Auto Setup w.ai di Vast.ai
-# By: https://x.com/IamBitcoiner
-# ----------------------------------------
+# =================== REINIT ===================
 
-echo "🔧 Menginstall w.ai CLI terlebih dahulu..."
+if [[ "$1" == "reinit" ]]; then
+  echo "🔄 Re-inisialisasi worker w.ai..."
+  pm2 stop all
+  pm2 delete all
+  rm -f rolling-restart.sh
+
+  echo ""
+  echo "👷 Masukkan jumlah worker baru:"
+  read -p "Jumlah Worker: " WORKER_COUNT
+
+  if ! [[ "$WORKER_COUNT" =~ ^[0-9]+$ ]]; then
+    echo "❌ Jumlah worker harus angka."
+    exit 1
+  fi
+
+  if [[ ! -f .env ]]; then
+    echo "🔑 Masukkan API key w.ai kamu:"
+    read -p "API_KEY: " API_KEY
+    if [[ -z "$API_KEY" ]]; then echo "❌ API Key tidak boleh kosong."; exit 1; fi
+    echo "W_AI_API_KEY=$API_KEY" > .env
+  fi
+
+  generate_wai_script
+  setup_workers "$WORKER_COUNT"
+  generate_rolling_restart_script "$WORKER_COUNT"
+  save_pm2_config
+
+  echo "✅ Worker berhasil di-reinisialisasi ($WORKER_COUNT worker aktif + rolling restart)."
+  exit 0
+fi
+
+# =================== INSTALL ===================
+
+echo "🔧 Menginstall w.ai CLI..."
 curl -fsSL https://app.w.ai/install.sh | bash
 
 echo ""
 echo "🔑 Masukkan API key w.ai kamu:"
 read -p "API_KEY: " API_KEY
+if [[ -z "$API_KEY" ]]; then echo "❌ API Key tidak boleh kosong."; exit 1; fi
 
 echo ""
-echo "👷 Masukkan jumlah worker yang ingin dijalankan:"
-read -p "Jumlah Worker (misal 10): " WORKER_COUNT
+echo "👷 Masukkan jumlah worker:"
+read -p "Jumlah Worker: " WORKER_COUNT
+if ! [[ "$WORKER_COUNT" =~ ^[0-9]+$ ]]; then echo "❌ Jumlah worker harus angka."; exit 1; fi
 
-# 1. Simpan API key ke .env
 echo "W_AI_API_KEY=$API_KEY" > .env
 
-# 2. Install Node.js dan PM2
-echo ""
-echo "📦 Menginstall Node.js dan PM2..."
-sudo apt update
-sudo apt install nodejs npm -y
-npm install -g pm2
-
-# 3. Buat script wai.sh
-echo ""
-echo "📝 Membuat script wai.sh..."
-cat <<'EOF' > wai.sh
-#!/bin/bash
-set -a
-source .env
-set +a
-
-wai run w.ai
-EOF
-chmod +x wai.sh
-
-# 4. Jalankan sekali untuk download model dan generate token
-echo ""
-echo "🚀 Jalankan proses download model & generate token"
+install_dependencies
+generate_wai_script
 
 echo ""
-echo "✅ W.AI CLI akan dijalankan satu kali sekarang."
-echo "⏳ Tunggu hingga proses selesai (akan muncul token di output)."
-echo "🛑 Setelah itu, TEKAN CTRL + C untuk menghentikan dan lanjut ke tahap berikutnya."
-echo ""
+echo "🚀 Jalankan proses download model (CTRL + C setelah token keluar)"
 read -p "▶️ Tekan ENTER untuk menjalankan './wai.sh'..."
-
 bash ./wai.sh
 
 echo ""
-echo "✅ Setelah kamu menekan CTRL + C dan proses berhenti,"
 read -p "➡️ Tekan ENTER untuk lanjut ke setup worker..."
 
-# 5. Jalankan semua worker sesuai jumlah input
-echo ""
-echo "⚙️  Menjalankan $WORKER_COUNT worker dengan PM2..."
-for ((i=0; i<WORKER_COUNT; i++)); do
-  pm2 start ./wai.sh --name "wai$i"
-done
+setup_workers "$WORKER_COUNT"
+generate_rolling_restart_script "$WORKER_COUNT"
+save_pm2_config
 
-# 6. Stop semua worker agar tidak crash karena load serentak
-echo ""
-echo "🛑 Stop semua worker sementara..."
-pm2 stop all
-
-# 7. Buat script rolling-restart.sh
-echo ""
-echo "🔁 Membuat script rolling restart..."
-cat <<EOF > rolling-restart.sh
-#!/bin/bash
-
-while true; do
-  for i in $(seq 0 $((WORKER_COUNT-1))); do
-    echo "[INFO] Restarting PM2 process wai$i"
-    pm2 restart wai$i
-    sleep 600
-  done
-done
-EOF
-chmod +x rolling-restart.sh
-
-# 8. Jalankan rolling restart dengan PM2
-echo ""
-echo "▶️ Menjalankan rolling restart loop..."
-pm2 start rolling-restart.sh --interpreter bash --name pm2-roller
-
-# 9. Simpan konfigurasi PM2
-echo ""
-echo "💾 Menyimpan konfigurasi PM2..."
-pm2 save
-pm2 startup
-
-# DONE
 echo ""
 echo "🎉 SETUP SELESAI!"
 echo "$WORKER_COUNT worker aktif + rolling restart otomatis setiap 10 menit."
