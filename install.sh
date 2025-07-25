@@ -90,9 +90,9 @@ EOF
 #!/bin/bash
 
 while true; do
-  for i in \\$(seq 0 $WORKER_LAST_INDEX); do
-    echo "[INFO] Restarting PM2 process wai\\$i"
-    pm2 restart wai\\$i
+  for i in $(seq 0 $WORKER_LAST_INDEX); do
+    echo "[INFO] Restarting PM2 process wai$i"
+    pm2 restart wai$i
     sleep 600
   done
 done
