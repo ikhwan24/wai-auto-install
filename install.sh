@@ -85,13 +85,14 @@ EOF
   pm2 stop all
 
   # Buat ulang script rolling-restart.sh
+  WORKER_LAST_INDEX=$((WORKER_COUNT-1))
   cat <<EOF > rolling-restart.sh
 #!/bin/bash
 
 while true; do
-  for i in \\$(seq 0 $((WORKER_COUNT-1))); do
-    echo "[INFO] Restarting PM2 process wai\\$i"
-    pm2 restart wai\\$i
+  for i in $(seq 0 $WORKER_LAST_INDEX); do
+    echo "[INFO] Restarting PM2 process wai$i"
+    pm2 restart wai$i
     sleep 600
   done
 done
