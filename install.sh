@@ -85,19 +85,26 @@ EOF
   pm2 stop all
 
   # Buat ulang script rolling-restart.sh
-  WORKER_LAST_INDEX=$((WORKER_COUNT-1))
-  cat <<EOF > rolling-restart.sh
+ # 7. Buat script rolling-restart.sh
+echo ""
+echo "🔁 Membuat script rolling restart..."
+
+WORKER_LAST_INDEX=$((WORKER_COUNT - 1))
+
+cat > rolling-restart.sh <<EOF
 #!/bin/bash
 
+# Rolling restart loop untuk semua worker
 while true; do
-  for i in $(seq 0 $WORKER_LAST_INDEX); do
-    echo "[INFO] Restarting PM2 process wai$i"
-    pm2 restart wai$i
+  for i in \$(seq 0 $WORKER_LAST_INDEX); do
+    echo "[INFO] Restarting PM2 process wai\$i"
+    pm2 restart wai\$i
     sleep 600
   done
 done
 EOF
-  chmod +x rolling-restart.sh
+
+chmod +x rolling-restart.sh
 
   # Jalankan rolling restart dengan PM2
   pm2 start rolling-restart.sh --interpreter bash --name pm2-roller
