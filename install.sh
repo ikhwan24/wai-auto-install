@@ -35,6 +35,7 @@ EOF
 install_dependencies() {
   echo "📦 Menginstall Node.js dan PM2..."
   sudo apt update
+  sudo apt install jq
   sudo apt install nodejs npm -y
   npm install -g pm2
 }
